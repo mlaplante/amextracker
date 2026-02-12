@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amex Platinum Benefit Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900">
+
+<div class="max-w-4xl mx-auto py-12 px-6" x-data="tracker()">
+    <header class="mb-10 text-center">
+        <h1 class="text-3xl font-bold text-blue-900 mb-2">Platinum Benefit Tracker</h1>
+        <p class="text-slate-500">Don't leave money on the table.</p>
+    </header>
+
+    <div class="flex gap-4 mb-8 justify-center">
+        <template x-for="freq in ['Monthly', 'Quarterly', 'Semi-Annual', 'Annual']">
+            <button @click="filter = freq" 
+                    :class="filter === freq ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200'"
+                    class="px-4 py-2 rounded-full text-sm font-medium transition shadow-sm"
+                    x-text="freq"></button>
+        </template>
+    </div>
+
+    <div class="grid gap-6">
+        <template x-for="benefit in filteredBenefits()" :key="benefit.id">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-1">
+                        <span class="text-lg font-bold" x-text="benefit.name"></span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold uppercase tracking-wider" x-text="benefit.freq"></span>
+                    </div>
+                    <p class="text-sm text-slate-500" x-text="benefit.description"></p>
+                    
+                    <div class="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+                        <div class="bg-blue-500 h-full transition-all duration-500" :style="`width: ${benefit.used ? 100 : 0}%` track-by-id"></div>
+                    </div>
+                </div>
+
+                <div class="ml-8 text-right">
+                    <div class="text-xl font-mono font-bold text-blue-700 mb-2" x-text="'$' + benefit.value"></div>
+                    <button @click="toggleUsed(benefit.id)" 
+                            :class="benefit.used ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'"
+                            class="px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-tighter transition">
+                        <span x-text="benefit.used ? '✓ Redeemed' : 'Mark Used'"></span>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>
+
+<script>
+    function tracker() {
+        return {
+            filter: 'Monthly',
+            benefits: [
+                { id: 1, name: 'Digital Entertainment', value: 25, freq: 'Monthly', description: 'Disney+, Hulu, NYT, Peacock, WSJ, YouTube', used: false },
+                { id: 2, name: 'Uber Cash', value: 15, freq: 'Monthly', description: 'Rides or Uber Eats in the U.S.', used: false },
+                { id: 3, name: 'Walmart+', value: 15.01, freq: 'Monthly', description: 'Monthly membership credit', used: false },
+                { id: 4, name: 'Resy Credit', value: 100, freq: 'Quarterly', description: 'Dining at U.S. Resy restaurants', used: false },
+                { id: 5, name: 'lululemon Credit', value: 75, freq: 'Quarterly', description: 'In-store or online U.S. purchases', used: false },
+                { id: 6, name: 'Hotel Credit', value: 300, freq: 'Semi-Annual', description: 'Prepaid FHR or Hotel Collection bookings', used: false },
+                { id: 7, name: 'Saks Fifth Avenue', value: 50, freq: 'Semi-Annual', description: 'Shop at Saks or saks.com', used: false },
+                { id: 8, name: 'Airline Fee Credit', value: 200, freq: 'Annual', description: 'Incidental fees on your selected airline', used: false },
+                { id: 9, name: 'Equinox Credit', value: 300, freq: 'Annual', description: 'Club membership or Equinox+ app', used: false }
+            ],
+            filteredBenefits() {
+                return this.benefits.filter(b => b.freq === this.filter);
+            },
+            toggleUsed(id) {
+                const b = this.benefits.find(i => i.id === id);
+                b.used = !b.used;
+            }
+        }
+    }
+</script>
+</body>
+</html>

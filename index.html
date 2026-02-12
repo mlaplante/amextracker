@@ -3,86 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platinum Ultra Tracker</title>
+    <title>Platinum Executive Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 font-sans" x-data="trackerApp()">
+<body class="bg-slate-50 font-sans antialiased" x-data="trackerApp()">
 
 <div class="max-w-md mx-auto min-h-screen bg-white shadow-2xl pb-12">
-    <div class="bg-slate-900 p-8 text-white rounded-b-[2.5rem] shadow-xl">
-        <div class="flex justify-between items-center opacity-60 mb-6 text-[10px] font-bold tracking-widest uppercase">
-            <span>2026 Portfolio</span>
-            <span x-text="new Date().toLocaleDateString()"></span>
-        </div>
-        <div class="flex items-end gap-3">
-            <h2 class="text-5xl font-black" x-text="'$' + totalSavings"></h2>
-            <p class="text-green-400 text-sm font-bold mb-1">REDEEMED</p>
+    <div class="bg-slate-950 p-8 text-white rounded-b-[3rem] shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-8 opacity-10">
+            <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V12h16v6zm0-10H4V6h16v2z"/></svg>
         </div>
         
-        <div class="mt-8">
-            <div class="flex justify-between text-[10px] font-bold uppercase mb-2">
-                <span class="text-slate-400">Annual Fee Progress ($695)</span>
-                <span x-text="Math.round((totalSavings / 695) * 100) + '%'"></span>
+        <div class="flex justify-between items-center mb-8 relative z-10">
+            <select x-model="activeCard" class="bg-white/10 border-none text-[10px] font-black uppercase tracking-widest rounded-full px-4 py-2 focus:ring-0">
+                <option value="platinum" class="text-black">Amex Platinum</option>
+                <option value="gold" class="text-black">Amex Gold</option>
+            </select>
+            <button @click="resetAll()" class="text-[10px] text-red-400 font-bold uppercase tracking-widest">Wipe Data</button>
+        </div>
+
+        <div class="relative z-10">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Total Redeemed (YTD)</p>
+            <div class="flex items-baseline gap-2">
+                <h2 class="text-6xl font-black tracking-tighter" x-text="'$' + totalSavings"></h2>
+                <span :class="totalSavings >= annualFee ? 'text-green-400' : 'text-orange-400'" 
+                      class="text-[10px] font-black uppercase" 
+                      x-text="totalSavings >= annualFee ? 'Profitable' : 'Subsidizing'"></span>
             </div>
-            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div class="bg-blue-500 h-full transition-all duration-1000" :style="`width: ${Math.min((totalSavings / 695) * 100, 100)}%` tracking-id"></div>
+        </div>
+        
+        <div class="mt-8 relative z-10">
+            <div class="flex justify-between text-[10px] font-bold uppercase mb-2">
+                <span class="text-slate-500" x-text="'Annual Fee: $' + annualFee"></span>
+                <span x-text="Math.round((totalSavings / annualFee) * 100) + '%'"></span>
+            </div>
+            <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-400 h-full transition-all duration-1000" 
+                     :style="`width: ${Math.min((totalSavings / annualFee) * 100, 100)}%` tracking-id"></div>
             </div>
         </div>
     </div>
 
-    <div class="px-6 -mt-6">
-        <div class="bg-blue-600 rounded-2xl p-4 text-white shadow-lg border border-blue-400">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h4 class="text-[10px] font-black uppercase tracking-tighter opacity-80">Global Entry/TSA Status</h4>
-                    <p class="text-xs font-bold" x-text="geStatus"></p>
-                </div>
-                <input type="date" x-model="lastGEUse" @change="save()" class="bg-blue-700 border-none rounded text-[10px] p-1 focus:ring-0">
+    <div class="px-6 -mt-5">
+        <div class="bg-indigo-600 rounded-2xl p-4 text-white shadow-xl flex items-center justify-between border border-indigo-400">
+            <div>
+                <p class="text-[10px] font-black uppercase opacity-80">Strategy Alert</p>
+                <p class="text-xs font-bold" x-text="daysLeft + ' days left for ' + filter + ' credits'"></p>
+            </div>
+            <div class="h-8 w-[2px] bg-white/20"></div>
+            <div class="text-right">
+                <p class="text-[10px] font-black uppercase opacity-80">Efficiency</p>
+                <p class="text-xs font-bold" x-text="Math.round((totalSavings / 20) * 100) / 100 + 'x'"></p>
             </div>
         </div>
     </div>
 
     <div class="px-6 mt-8">
-        <div class="flex p-1 bg-slate-100 rounded-xl">
+        <div class="flex p-1 bg-slate-100 rounded-2xl overflow-x-auto no-scrollbar">
             <template x-for="f in ['Monthly', 'Quarterly', 'Semi-Annual', 'Annual']">
                 <button @click="filter = f" 
                     :class="filter === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'"
-                    class="flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all" 
+                    class="flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap px-4" 
                     x-text="f"></button>
             </template>
         </div>
     </div>
 
-    <div x-show="daysLeft <= 7" class="mx-6 mt-4 p-2 bg-red-50 text-red-600 rounded-lg text-center text-[10px] font-black uppercase animate-pulse">
-        ⚠️ Warning: Only <span x-text="daysLeft"></span> days left to use <span x-text="filter"></span> credits!
-    </div>
-
     <div class="px-6 mt-6 space-y-4">
         <template x-for="benefit in filteredBenefits()" :key="benefit.id">
-            <div class="border border-slate-100 rounded-2xl p-4 transition-all" :class="benefit.used ? 'bg-slate-50 opacity-60' : 'bg-white shadow-sm'">
-                <div class="flex justify-between items-start">
+            <div class="border-b border-slate-100 pb-6 mb-6 last:border-0">
+                <div class="flex justify-between items-start mb-3">
                     <div class="flex-1">
                         <div class="flex items-center gap-2">
-                            <h3 class="font-bold text-sm text-slate-800" x-text="benefit.name"></h3>
-                            <span class="text-[10px] font-bold text-blue-600" x-text="'$' + benefit.value"></span>
+                            <h3 class="font-black text-slate-800 text-sm tracking-tight" x-text="benefit.name"></h3>
+                            <span class="text-[10px] font-bold text-indigo-600" x-text="'$' + benefit.value"></span>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-0.5" x-text="benefit.desc"></p>
+                        <p class="text-[10px] text-slate-400 font-medium" x-text="benefit.desc"></p>
                     </div>
                     <button @click="toggleBenefit(benefit.id)" 
-                            :class="benefit.used ? 'bg-green-500 text-white border-green-500' : 'bg-white border-slate-200 text-slate-300'"
-                            class="w-10 h-10 border rounded-xl flex items-center justify-center transition-all shadow-sm">
+                            :class="benefit.used ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-300'"
+                            class="w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-sm">
                         <svg x-show="benefit.used" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7" /></svg>
                         <span x-show="!benefit.used" class="text-xl">+</span>
                     </button>
                 </div>
-                
-                <div class="mt-3">
-                    <input type="text" x-model="benefit.note" @input="save()" 
-                           class="w-full bg-slate-50 border-none rounded-lg p-2 text-[10px] placeholder:text-slate-300 focus:ring-1 focus:ring-blue-100" 
-                           :placeholder="benefit.placeholder">
+
+                <div x-show="benefit.stack" class="mb-3 flex items-center gap-1.5 text-[9px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-md w-fit uppercase tracking-tighter">
+                    <span class="animate-pulse">🔥</span> Stack with Rakuten / Amex Offers
                 </div>
-                <a :href="benefit.url" target="_blank" class="text-[9px] font-bold text-blue-500 mt-2 inline-block uppercase tracking-widest hover:underline">Launch Amex Portal →</a>
+
+                <div class="space-y-2">
+                    <input type="text" x-model="benefit.note" @input="save()" 
+                           class="w-full bg-slate-50 border-none rounded-xl p-3 text-[10px] placeholder:text-slate-300 focus:ring-1 focus:ring-indigo-100" 
+                           placeholder="Notes (selection, airline, order #)...">
+                    
+                    <a :href="benefit.url" target="_blank" class="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 text-[9px] font-bold text-slate-500 hover:bg-slate-100">
+                        LAUNCH PORTAL
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                </div>
             </div>
         </template>
     </div>
@@ -91,45 +111,37 @@
 <script>
 function trackerApp() {
     return {
+        activeCard: 'platinum',
         filter: 'Monthly',
         benefits: [],
         totalSavings: 0,
+        annualFee: 895, // New 2026 Annual Fee
         daysLeft: 0,
-        lastGEUse: '',
         
         init() {
             this.updateUrgency();
             const isDec = new Date().getMonth() === 11;
             
             const defaultBenefits = [
-                { id: 'ent', name: 'Entertainment', value: 25, freq: 'Monthly', desc: 'Disney, Hulu, Peacock, YT, NYT', placeholder: 'Current service...', url: 'https://global.americanexpress.com/card-benefits/detail/digital-entertainment/platinum', used: false, note: '' },
-                { id: 'uber', name: 'Uber Cash', value: isDec ? 35 : 15, freq: 'Monthly', desc: 'Monthly $15 + Dec $20 Bonus', placeholder: 'Uber Eats used?', url: 'https://www.uber.com', used: false, note: '' },
-                { id: 'wm', name: 'Walmart+', value: 15.01, freq: 'Monthly', desc: 'Free membership credit', placeholder: 'Note...', url: 'https://www.walmart.com/plus/amexplatinum', used: false, note: '' },
-                { id: 'resy', name: 'Resy Credit', value: 100, freq: 'Quarterly', desc: 'U.S. Resy restaurants', placeholder: 'Restaurant name...', url: 'https://resy.com', used: false, note: '' },
-                { id: 'lulu', name: 'lululemon', value: 75, freq: 'Quarterly', desc: 'U.S. Gear & Apparel', placeholder: 'Item bought...', url: 'https://www.lululemon.com', used: false, note: '' },
-                { id: 'saks', name: 'Saks Fifth Ave', value: 50, freq: 'Semi-Annual', desc: 'Jan-Jun / Jul-Dec', placeholder: 'Order # or item...', url: 'https://www.saksfifthavenue.com', used: false, note: '' },
-                { id: 'hotel', name: 'Hotel Credit', value: 300, freq: 'Semi-Annual', desc: 'FHR/HC (MUST PREPAY)', placeholder: 'Destination...', url: 'https://www.amextravel.com', used: false, note: '' },
-                { id: 'airline', name: 'Airline Fee', value: 200, freq: 'Annual', desc: 'Incidental fees only', placeholder: 'Chosen Airline (UA/DL/AA)...', url: 'https://global.americanexpress.com/card-benefits/detail/airline-fee-credit/platinum', used: false, note: '' },
-                { id: 'clear', name: 'CLEAR+ Credit', value: 209, freq: 'Annual', desc: 'Identity membership', placeholder: 'Renewal date...', url: 'https://www.clearme.com', used: false, note: '' },
-                { id: 'eq', name: 'Equinox', value: 300, freq: 'Annual', desc: 'Club or Digital App', placeholder: 'Membership type...', url: 'https://www.equinox.com/amex', used: false, note: '' }
+                { id: 'ent', name: 'Digital Entertainment', value: 25, freq: 'Monthly', stack: true, desc: 'Disney, Hulu, NYT, Peacock, WSJ, YT', url: 'https://global.americanexpress.com/card-benefits/detail/digital-entertainment/platinum', used: false, note: '' },
+                { id: 'uber', name: 'Uber Cash', value: isDec ? 35 : 15, freq: 'Monthly', stack: false, desc: 'Rides or Eats (Dec $20 Bonus incl)', url: 'https://www.uber.com', used: false, note: '' },
+                { id: 'wm', name: 'Walmart+', value: 15.01, freq: 'Monthly', stack: false, desc: 'Free membership & Paramount+', url: 'https://www.walmart.com/plus/amexplatinum', used: false, note: '' },
+                { id: 'resy', name: 'Resy Credit', value: 100, freq: 'Quarterly', stack: false, desc: 'U.S. Resy restaurants', url: 'https://resy.com', used: false, note: '' },
+                { id: 'lulu', name: 'lululemon', value: 75, freq: 'Quarterly', stack: true, desc: 'U.S. Gear & Apparel', url: 'https://www.lululemon.com', used: false, note: '' },
+                { id: 'saks', name: 'Saks Fifth Ave', value: 50, freq: 'Semi-Annual', stack: true, desc: 'Jan-Jun / Jul-Dec', url: 'https://www.saksfifthavenue.com', used: false, note: '' },
+                { id: 'hotel', name: 'Hotel Credit', value: 300, freq: 'Semi-Annual', stack: false, desc: 'FHR/HC (MUST PREPAY)', url: 'https://www.amextravel.com', used: false, note: '' },
+                { id: 'airline', name: 'Airline Fee', value: 200, freq: 'Annual', stack: false, desc: 'Incidental fees only', url: 'https://global.americanexpress.com/card-benefits/detail/airline-fee-credit/platinum', used: false, note: '' },
+                { id: 'clear', name: 'CLEAR+ Credit', value: 209, freq: 'Annual', stack: false, desc: 'Expedited airport security', url: 'https://www.clearme.com', used: false, note: '' },
+                { id: 'eq', name: 'Equinox', value: 300, freq: 'Annual', stack: false, desc: 'Club or Digital App', url: 'https://www.equinox.com/amex', used: false, note: '' }
             ];
 
-            const saved = JSON.parse(localStorage.getItem('platinum_v5_data'));
-            const savedSavings = localStorage.getItem('platinum_v5_savings') || 0;
-            const lastCheck = localStorage.getItem('platinum_v5_check') || new Date().toISOString();
-            this.lastGEUse = localStorage.getItem('platinum_v5_ge') || '';
+            const saved = JSON.parse(localStorage.getItem('platinum_v6_data'));
+            const savedSavings = localStorage.getItem('platinum_v6_savings') || 0;
+            const lastCheck = localStorage.getItem('platinum_v6_check') || new Date().toISOString();
             
             this.benefits = saved || defaultBenefits;
             this.totalSavings = parseFloat(savedSavings);
             this.checkAutoReset(lastCheck);
-        },
-
-        get geStatus() {
-            if (!this.lastGEUse) return "Select last use date";
-            const last = new Date(this.lastGEUse);
-            const next = new Date(last.setFullYear(last.getFullYear() + 4));
-            const now = new Date();
-            return now >= next ? "ELIGIBLE NOW" : "Eligible: " + next.toLocaleDateString();
         },
 
         updateUrgency() {
@@ -149,11 +161,15 @@ function trackerApp() {
             if (now.getMonth() !== last.getMonth()) { this.resetByFreq('Monthly'); needsSave = true; }
             if (getQ(now) !== getQ(last)) { this.resetByFreq('Quarterly'); needsSave = true; }
             if (getH(now) !== getH(last)) { this.resetByFreq('Semi-Annual'); needsSave = true; }
-            if (now.getFullYear() !== last.getFullYear()) { this.resetByFreq('Annual'); this.totalSavings = 0; needsSave = true; }
+            if (now.getFullYear() !== last.getFullYear()) { 
+                this.resetByFreq('Annual'); 
+                this.totalSavings = 0; 
+                needsSave = true; 
+            }
 
             if (needsSave) {
                 this.save();
-                localStorage.setItem('platinum_v5_check', now.toISOString());
+                localStorage.setItem('platinum_v6_check', now.toISOString());
             }
         },
 
@@ -173,13 +189,12 @@ function trackerApp() {
         },
 
         save() {
-            localStorage.setItem('platinum_v5_data', JSON.stringify(this.benefits));
-            localStorage.setItem('platinum_v5_savings', this.totalSavings);
-            localStorage.setItem('platinum_v5_ge', this.lastGEUse);
+            localStorage.setItem('platinum_v6_data', JSON.stringify(this.benefits));
+            localStorage.setItem('platinum_v6_savings', this.totalSavings);
         },
 
         resetAll() {
-            if(confirm("Wipe everything?")) { localStorage.clear(); location.reload(); }
+            if(confirm("Wipe all tracking data?")) { localStorage.clear(); location.reload(); }
         }
     }
 }

@@ -67,12 +67,90 @@
                 { id: 8, name: 'Airline Fee Credit', value: 200, freq: 'Annual', description: 'Incidental fees on your selected airline', used: false },
                 { id: 9, name: 'Equinox Credit', value: 300, freq: 'Annual', description: 'Club membership or Equinox+ app', used: false }
             ],
+            
+            init() {
+                this.checkAndResetBenefits();
+                this.loadBenefitStates();
+            },
+            
+            checkAndResetBenefits() {
+                const now = new Date();
+                const resetTimestamps = this.getResetTimestamps();
+                
+                // Check each frequency type
+                const frequencies = {
+                    'Monthly': 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+                    'Quarterly': 90 * 24 * 60 * 60 * 1000, // 90 days
+                    'Semi-Annual': 180 * 24 * 60 * 60 * 1000, // 180 days
+                    'Annual': 365 * 24 * 60 * 60 * 1000 // 365 days
+                };
+                
+                let shouldSave = false;
+                for (const [freq, interval] of Object.entries(frequencies)) {
+                    const lastReset = resetTimestamps[freq] || 0;
+                    const timeSinceReset = now.getTime() - lastReset;
+                    
+                    if (timeSinceReset >= interval) {
+                        // Reset all benefits of this frequency
+                        this.benefits.forEach(b => {
+                            if (b.freq === freq) {
+                                b.used = false;
+                            }
+                        });
+                        resetTimestamps[freq] = now.getTime();
+                        shouldSave = true;
+                    }
+                }
+                
+                if (shouldSave) {
+                    localStorage.setItem('amex_reset_timestamps', JSON.stringify(resetTimestamps));
+                    this.saveBenefitStates();
+                }
+            },
+            
+            getResetTimestamps() {
+                const stored = localStorage.getItem('amex_reset_timestamps');
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+                // Initialize with current time for all frequencies
+                const now = new Date().getTime();
+                return {
+                    'Monthly': now,
+                    'Quarterly': now,
+                    'Semi-Annual': now,
+                    'Annual': now
+                };
+            },
+            
+            loadBenefitStates() {
+                const stored = localStorage.getItem('amex_benefit_states');
+                if (stored) {
+                    const states = JSON.parse(stored);
+                    this.benefits.forEach(b => {
+                        if (states[b.id] !== undefined) {
+                            b.used = states[b.id];
+                        }
+                    });
+                }
+            },
+            
+            saveBenefitStates() {
+                const states = {};
+                this.benefits.forEach(b => {
+                    states[b.id] = b.used;
+                });
+                localStorage.setItem('amex_benefit_states', JSON.stringify(states));
+            },
+            
             filteredBenefits() {
                 return this.benefits.filter(b => b.freq === this.filter);
             },
+            
             toggleUsed(id) {
                 const b = this.benefits.find(i => i.id === id);
                 b.used = !b.used;
+                this.saveBenefitStates();
             }
         }
     }

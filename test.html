@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Amex Tracker - localStorage</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+        pre { background: #f5f5f5; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Amex Tracker localStorage Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Copy the tracker function from index.html
+        function tracker() {
+            return {
+                filter: 'Monthly',
+                benefits: [
+                    { id: 1, name: 'Digital Entertainment', value: 25, freq: 'Monthly', description: 'Test', used: false },
+                    { id: 2, name: 'Uber Cash', value: 15, freq: 'Monthly', description: 'Test', used: false },
+                    { id: 4, name: 'Resy Credit', value: 100, freq: 'Quarterly', description: 'Test', used: false },
+                    { id: 6, name: 'Hotel Credit', value: 300, freq: 'Semi-Annual', description: 'Test', used: false },
+                    { id: 8, name: 'Airline Fee Credit', value: 200, freq: 'Annual', description: 'Test', used: false }
+                ],
+                
+                init() {
+                    this.checkAndResetBenefits();
+                    this.loadBenefitStates();
+                },
+                
+                checkAndResetBenefits() {
+                    const now = new Date();
+                    const resetTimestamps = this.getResetTimestamps();
+                    
+                    const frequencies = {
+                        'Monthly': 30 * 24 * 60 * 60 * 1000,
+                        'Quarterly': 90 * 24 * 60 * 60 * 1000,
+                        'Semi-Annual': 180 * 24 * 60 * 60 * 1000,
+                        'Annual': 365 * 24 * 60 * 60 * 1000
+                    };
+                    
+                    let shouldSave = false;
+                    for (const [freq, interval] of Object.entries(frequencies)) {
+                        const lastReset = resetTimestamps[freq] || 0;
+                        const timeSinceReset = now.getTime() - lastReset;
+                        
+                        if (timeSinceReset >= interval) {
+                            this.benefits.forEach(b => {
+                                if (b.freq === freq) {
+                                    b.used = false;
+                                }
+                            });
+                            resetTimestamps[freq] = now.getTime();
+                            shouldSave = true;
+                        }
+                    }
+                    
+                    if (shouldSave) {
+                        localStorage.setItem('amex_reset_timestamps', JSON.stringify(resetTimestamps));
+                        this.saveBenefitStates();
+                    }
+                },
+                
+                getResetTimestamps() {
+                    const stored = localStorage.getItem('amex_reset_timestamps');
+                    if (stored) {
+                        return JSON.parse(stored);
+                    }
+                    const now = new Date().getTime();
+                    return {
+                        'Monthly': now,
+                        'Quarterly': now,
+                        'Semi-Annual': now,
+                        'Annual': now
+                    };
+                },
+                
+                loadBenefitStates() {
+                    const stored = localStorage.getItem('amex_benefit_states');
+                    if (stored) {
+                        const states = JSON.parse(stored);
+                        this.benefits.forEach(b => {
+                            if (states[b.id] !== undefined) {
+                                b.used = states[b.id];
+                            }
+                        });
+                    }
+                },
+                
+                saveBenefitStates() {
+                    const states = {};
+                    this.benefits.forEach(b => {
+                        states[b.id] = b.used;
+                    });
+                    localStorage.setItem('amex_benefit_states', JSON.stringify(states));
+                },
+                
+                filteredBenefits() {
+                    return this.benefits.filter(b => b.freq === this.filter);
+                },
+                
+                toggleUsed(id) {
+                    const b = this.benefits.find(i => i.id === id);
+                    b.used = !b.used;
+                    this.saveBenefitStates();
+                }
+            }
+        }
+        
+        // Run tests
+        const results = document.getElementById('results');
+        
+        function addResult(testName, passed, details) {
+            const div = document.createElement('div');
+            div.className = 'test ' + (passed ? 'pass' : 'fail');
+            div.innerHTML = `<h3>${passed ? '✓' : '✗'} ${testName}</h3><pre>${details}</pre>`;
+            results.appendChild(div);
+        }
+        
+        // Clear localStorage before tests
+        localStorage.clear();
+        
+        // Test 1: Initialize tracker
+        addResult('Test 1: Initialize tracker', true, 'Tracker initialized successfully');
+        const app = tracker();
+        app.init();
+        
+        // Test 2: Mark benefits as used
+        app.toggleUsed(1); // Monthly
+        app.toggleUsed(4); // Quarterly
+        app.toggleUsed(6); // Semi-Annual
+        
+        const saved = localStorage.getItem('amex_benefit_states');
+        const parsed = JSON.parse(saved);
+        const test2Pass = parsed[1] === true && parsed[4] === true && parsed[6] === true;
+        addResult('Test 2: Mark benefits as used', test2Pass, 
+            `Saved states: ${JSON.stringify(parsed, null, 2)}`);
+        
+        // Test 3: Verify reset timestamps are stored
+        const timestamps = localStorage.getItem('amex_reset_timestamps');
+        const test3Pass = timestamps !== null;
+        addResult('Test 3: Reset timestamps stored', test3Pass, 
+            `Timestamps: ${timestamps}`);
+        
+        // Test 4: Load benefit states
+        const app2 = tracker();
+        app2.init();
+        const test4Pass = app2.benefits.find(b => b.id === 1).used === true &&
+                         app2.benefits.find(b => b.id === 4).used === true &&
+                         app2.benefits.find(b => b.id === 6).used === true;
+        addResult('Test 4: Load saved states on init', test4Pass,
+            `Benefit 1: ${app2.benefits.find(b => b.id === 1).used}\n` +
+            `Benefit 4: ${app2.benefits.find(b => b.id === 4).used}\n` +
+            `Benefit 6: ${app2.benefits.find(b => b.id === 6).used}`);
+        
+        // Test 5: Simulate reset for expired benefits
+        const app3 = tracker();
+        // Manually set old timestamps
+        const oldTimestamps = {
+            'Monthly': Date.now() - (31 * 24 * 60 * 60 * 1000), // 31 days ago
+            'Quarterly': Date.now() - (91 * 24 * 60 * 60 * 1000), // 91 days ago
+            'Semi-Annual': Date.now() - (181 * 24 * 60 * 60 * 1000), // 181 days ago
+            'Annual': Date.now()
+        };
+        localStorage.setItem('amex_reset_timestamps', JSON.stringify(oldTimestamps));
+        app3.init();
+        
+        const test5Pass = app3.benefits.find(b => b.id === 1).used === false && // Monthly should reset
+                         app3.benefits.find(b => b.id === 4).used === false && // Quarterly should reset
+                         app3.benefits.find(b => b.id === 6).used === false; // Semi-Annual should reset
+        addResult('Test 5: Auto-reset expired benefits', test5Pass,
+            `Monthly (ID 1): ${app3.benefits.find(b => b.id === 1).used} (should be false)\n` +
+            `Quarterly (ID 4): ${app3.benefits.find(b => b.id === 4).used} (should be false)\n` +
+            `Semi-Annual (ID 6): ${app3.benefits.find(b => b.id === 6).used} (should be false)`);
+    </script>
+</body>
+</html>

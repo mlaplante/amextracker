@@ -3,48 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amex Platinum Benefit Tracker</title>
+    <title>Platinum Pro Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900">
+<body class="bg-slate-100 font-sans text-slate-900" x-data="trackerApp()">
 
-<div class="max-w-4xl mx-auto py-12 px-6" x-data="tracker()">
-    <header class="mb-10 text-center">
-        <h1 class="text-3xl font-bold text-blue-900 mb-2">Platinum Benefit Tracker</h1>
-        <p class="text-slate-500">Don't leave money on the table.</p>
-    </header>
-
-    <div class="flex gap-4 mb-8 justify-center">
-        <template x-for="freq in ['Monthly', 'Quarterly', 'Semi-Annual', 'Annual']">
-            <button @click="filter = freq" 
-                    :class="filter === freq ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200'"
-                    class="px-4 py-2 rounded-full text-sm font-medium transition shadow-sm"
-                    x-text="freq"></button>
-        </template>
+<div class="max-w-md mx-auto min-h-screen bg-white shadow-2xl pb-12">
+    <div class="bg-gradient-to-br from-blue-950 to-blue-800 p-8 text-white rounded-b-[3rem] shadow-lg">
+        <div class="flex justify-between items-center mb-6">
+            <span class="text-xs font-black tracking-widest uppercase opacity-70">2026 Earnings</span>
+            <button @click="resetAll()" class="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition">Reset</button>
+        </div>
+        <div class="text-center">
+            <h2 class="text-6xl font-black mb-1" x-text="'$' + totalSavings"></h2>
+            <p class="text-blue-200 text-sm font-medium">Redeemed Year-to-Date</p>
+        </div>
+        
+        <div class="mt-8 space-y-2">
+            <div class="flex justify-between text-xs font-bold uppercase tracking-tighter">
+                <span>Fee Offset</span>
+                <span x-text="Math.round((totalSavings / 695) * 100) + '%'"></span>
+            </div>
+            <div class="w-full bg-blue-900/50 h-3 rounded-full overflow-hidden border border-white/10">
+                <div class="bg-green-400 h-full transition-all duration-1000 shadow-[0_0_15px_rgba(74,222,128,0.5)]" 
+                     :style="`width: ${Math.min((totalSavings / 695) * 100, 100)}%` tracking-id"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="grid gap-6">
-        <template x-for="benefit in filteredBenefits()" :key="benefit.id">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-1">
-                        <span class="text-lg font-bold" x-text="benefit.name"></span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold uppercase tracking-wider" x-text="benefit.freq"></span>
-                    </div>
-                    <p class="text-sm text-slate-500" x-text="benefit.description"></p>
-                    
-                    <div class="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
-                        <div class="bg-blue-500 h-full transition-all duration-500" :style="`width: ${benefit.used ? 100 : 0}%` track-by-id"></div>
-                    </div>
-                </div>
+    <div class="px-6 -mt-4">
+        <div :class="daysLeft <= 5 ? 'bg-red-500 shadow-red-200' : 'bg-orange-500 shadow-orange-200'" 
+             class="rounded-2xl p-3 text-white text-center shadow-lg transform transition-transform animate-pulse">
+            <p class="text-xs font-bold uppercase tracking-tight">
+                ⚠️ <span x-text="daysLeft"></span> Days Left to use <span x-text="filter"></span> Credits!
+            </p>
+        </div>
+    </div>
 
-                <div class="ml-8 text-right">
-                    <div class="text-xl font-mono font-bold text-blue-700 mb-2" x-text="'$' + benefit.value"></div>
-                    <button @click="toggleUsed(benefit.id)" 
-                            :class="benefit.used ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'"
-                            class="px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-tighter transition">
-                        <span x-text="benefit.used ? '✓ Redeemed' : 'Mark Used'"></span>
+    <div class="px-6 mt-8">
+        <div class="flex p-1 bg-slate-100 rounded-2xl">
+            <template x-for="f in ['Monthly', 'Quarterly', 'Semi-Annual', 'Annual']">
+                <button @click="filter = f" 
+                    :class="filter === f ? 'bg-white text-blue-900 shadow-md scale-105' : 'text-slate-500'"
+                    class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all" 
+                    x-text="f"></button>
+            </template>
+        </div>
+    </div>
+
+    <div class="px-6 mt-6 space-y-4">
+        <template x-for="benefit in filteredBenefits()" :key="benefit.id">
+            <div class="group relative bg-white border-2 border-slate-50 rounded-3xl p-5 hover:border-blue-100 transition-all shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div class="pr-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-black text-slate-800 leading-tight" x-text="benefit.name"></h3>
+                            <span class="bg-blue-50 text-blue-700 text-[10px] font-black px-2 py-0.5 rounded-lg" x-text="'$' + benefit.value"></span>
+                        </div>
+                        <p class="text-xs text-slate-400 font-medium mb-3" x-text="benefit.desc"></p>
+                        
+                        <a :href="benefit.url" target="_blank" class="inline-flex items-center text-[10px] font-bold text-blue-600 hover:text-blue-800 underline uppercase tracking-widest">
+                            Open Portal
+                            <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        </a>
+                    </div>
+
+                    <button @click="toggleBenefit(benefit.id)" 
+                        :class="benefit.used ? 'bg-green-500 border-green-500' : 'bg-white border-slate-200'"
+                        class="w-12 h-12 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 shadow-sm">
+                        <svg x-show="benefit.used" class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7" /></svg>
+                        <span x-show="!benefit.used" class="text-2xl font-light text-slate-300">+</span>
                     </button>
                 </div>
             </div>
@@ -53,29 +82,92 @@
 </div>
 
 <script>
-    function tracker() {
-        return {
-            filter: 'Monthly',
-            benefits: [
-                { id: 1, name: 'Digital Entertainment', value: 25, freq: 'Monthly', description: 'Disney+, Hulu, NYT, Peacock, WSJ, YouTube', used: false },
-                { id: 2, name: 'Uber Cash', value: 15, freq: 'Monthly', description: 'Rides or Uber Eats in the U.S.', used: false },
-                { id: 3, name: 'Walmart+', value: 15.01, freq: 'Monthly', description: 'Monthly membership credit', used: false },
-                { id: 4, name: 'Resy Credit', value: 100, freq: 'Quarterly', description: 'Dining at U.S. Resy restaurants', used: false },
-                { id: 5, name: 'lululemon Credit', value: 75, freq: 'Quarterly', description: 'In-store or online U.S. purchases', used: false },
-                { id: 6, name: 'Hotel Credit', value: 300, freq: 'Semi-Annual', description: 'Prepaid FHR or Hotel Collection bookings', used: false },
-                { id: 7, name: 'Saks Fifth Avenue', value: 50, freq: 'Semi-Annual', description: 'Shop at Saks or saks.com', used: false },
-                { id: 8, name: 'Airline Fee Credit', value: 200, freq: 'Annual', description: 'Incidental fees on your selected airline', used: false },
-                { id: 9, name: 'Equinox Credit', value: 300, freq: 'Annual', description: 'Club membership or Equinox+ app', used: false }
-            ],
-            filteredBenefits() {
-                return this.benefits.filter(b => b.freq === this.filter);
-            },
-            toggleUsed(id) {
-                const b = this.benefits.find(i => i.id === id);
-                b.used = !b.used;
+function trackerApp() {
+    return {
+        filter: 'Monthly',
+        benefits: [],
+        totalSavings: 0,
+        daysLeft: 0,
+        
+        init() {
+            this.updateUrgency();
+            const isDec = new Date().getMonth() === 11;
+            
+            const defaultBenefits = [
+                { id: 'ent', name: 'Digital Entertainment', value: 25, freq: 'Monthly', desc: 'Disney, Hulu, NYT, Peacock, WSJ, YT', url: 'https://global.americanexpress.com/card-benefits/detail/digital-entertainment/platinum', used: false },
+                { id: 'uber', name: 'Uber Cash', value: isDec ? 35 : 15, freq: 'Monthly', desc: 'Rides or Eats (Dec Bonus included)', url: 'https://www.uber.com', used: false },
+                { id: 'wm', name: 'Walmart+', value: 15.01, freq: 'Monthly', desc: 'Free delivery & Paramount+', url: 'https://www.walmart.com/plus/amexplatinum', used: false },
+                { id: 'resy', name: 'Resy Credit', value: 100, freq: 'Quarterly', desc: 'U.S. Resy restaurants', url: 'https://resy.com', used: false },
+                { id: 'lulu', name: 'lululemon Credit', value: 75, freq: 'Quarterly', desc: 'Shop in-store or online', url: 'https://www.lululemon.com', used: false },
+                { id: 'fhr', name: 'Hotel Credit', value: 300, freq: 'Semi-Annual', desc: 'Prepaid FHR/Hotel Collection', url: 'https://www.amextravel.com', used: false },
+                { id: 'saks', name: 'Saks Fifth Ave', value: 50, freq: 'Semi-Annual', desc: 'Luxury clothing & beauty', url: 'https://www.saksfifthavenue.com', used: false },
+                { id: 'air', name: 'Airline Fee', value: 200, freq: 'Annual', desc: 'Baggage & lounge fees', url: 'https://global.americanexpress.com/card-benefits/detail/airline-fee-credit/platinum', used: false },
+                { id: 'clear', name: 'CLEAR+ Credit', value: 209, freq: 'Annual', desc: 'Expedited airport security', url: 'https://www.clearme.com', used: false }
+            ];
+
+            const saved = JSON.parse(localStorage.getItem('platinum_v3_data'));
+            const savedSavings = localStorage.getItem('platinum_v3_savings') || 0;
+            const lastCheck = localStorage.getItem('platinum_v3_check') || new Date().toISOString();
+            
+            this.benefits = saved || defaultBenefits;
+            this.totalSavings = parseFloat(savedSavings);
+            
+            this.checkAutoReset(lastCheck);
+        },
+
+        updateUrgency() {
+            const now = new Date();
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            this.daysLeft = lastDay - now.getDate();
+        },
+
+        checkAutoReset(lastCheckDate) {
+            const now = new Date();
+            const last = new Date(lastCheckDate);
+            let needsSave = false;
+
+            const getQ = (d) => Math.floor(d.getMonth() / 3);
+            const getH = (d) => d.getMonth() < 6 ? 0 : 1;
+
+            if (now.getMonth() !== last.getMonth()) { this.resetByFreq('Monthly'); needsSave = true; }
+            if (getQ(now) !== getQ(last)) { this.resetByFreq('Quarterly'); needsSave = true; }
+            if (getH(now) !== getH(last)) { this.resetByFreq('Semi-Annual'); needsSave = true; }
+            if (now.getFullYear() !== last.getFullYear()) { this.resetByFreq('Annual'); this.totalSavings = 0; needsSave = true; }
+
+            if (needsSave) {
+                this.save();
+                localStorage.setItem('platinum_v3_check', now.toISOString());
+            }
+        },
+
+        resetByFreq(freq) {
+            this.benefits.forEach(b => { if (b.freq === freq) b.used = false; });
+        },
+
+        filteredBenefits() {
+            return this.benefits.filter(b => b.freq === this.filter);
+        },
+
+        toggleBenefit(id) {
+            const b = this.benefits.find(i => i.id === id);
+            b.used = !b.used;
+            this.totalSavings += b.used ? b.value : -b.value;
+            this.save();
+        },
+
+        save() {
+            localStorage.setItem('platinum_v3_data', JSON.stringify(this.benefits));
+            localStorage.setItem('platinum_v3_savings', this.totalSavings);
+        },
+
+        resetAll() {
+            if(confirm("Wipe all data and restart 2026 tracking?")) {
+                localStorage.clear();
+                location.reload();
             }
         }
     }
+}
 </script>
 </body>
 </html>

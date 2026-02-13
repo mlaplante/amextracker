@@ -17,53 +17,53 @@
 </head>
 <body class="text-slate-100 font-sans select-none" x-data="trackerApp()">
 
-<div class="max-w-md mx-auto min-h-screen pb-24">
-    <header class="sticky top-0 z-50 glass rounded-b-[2.5rem] p-8 pb-10 shadow-2xl">
-        <div class="flex justify-between items-center mb-8 relative z-10">
-            <span class="text-[9px] font-black uppercase tracking-[0.4em] text-blue-400">ROI Engine v2026.2</span>
-            <button @click="shareStats(); haptic(10)" class="p-2 bg-white/5 rounded-full"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg></button>
+<div class="max-w-lg mx-auto min-h-screen pb-24">
+    <header class="sticky top-0 z-50 glass rounded-b-[2.5rem] p-8 pb-12 shadow-2xl">
+        <div class="flex justify-between items-center mb-10 relative z-10">
+            <span class="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">ROI Engine v2026.2</span>
+            <button @click="shareStats(); haptic(10)" class="p-2 bg-white/5 rounded-full"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg></button>
         </div>
 
-        <div class="space-y-1 relative z-10">
+        <div class="space-y-2 relative z-10">
             <h2 class="text-7xl font-black tracking-tighter" x-text="'$' + totalSavings"></h2>
             <div class="flex items-center gap-3">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Annual Fee Recovery ($895)</p>
-                <div class="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
+                <p class="text-[12px] font-black uppercase tracking-widest text-slate-400">Annual Fee Recovery ($895)</p>
+                <div class="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
                     <div class="h-full bg-blue-500 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]" :style="`width: ${Math.min((totalSavings / 895) * 100, 100)}%` tracking-id"></div>
                 </div>
-                <span class="text-[10px] font-black text-blue-400" x-text="Math.round((totalSavings / 895) * 100) + '%'"></span>
+                <span class="text-[12px] font-black text-blue-400" x-text="Math.round((totalSavings / 895) * 100) + '%'"></span>
             </div>
         </div>
     </header>
 
-    <nav class="px-6 mt-8 flex gap-2 overflow-x-auto no-scrollbar">
+    <nav class="px-6 mt-10 flex gap-3 overflow-x-auto no-scrollbar">
         <template x-for="f in ['Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Special']">
             <button @click="filter = f; haptic(5)" 
                 :class="filter === f ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'bg-white/5 text-slate-500'"
-                class="px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap" x-text="f"></button>
+                class="px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap" x-text="f"></button>
         </template>
     </nav>
 
-    <div class="px-6 mt-8 space-y-4">
+    <div class="px-6 mt-10 space-y-6">
         <template x-for="benefit in filteredBenefits()" :key="benefit.id">
-            <div class="glass p-5 rounded-[2rem] transition-all" :class="benefit.used ? 'opacity-30' : ''">
+            <div class="glass p-6 rounded-[2rem] transition-all" :class="benefit.used ? 'opacity-30' : ''">
                 <div class="flex justify-between items-start">
                     <div class="flex-1 pr-4">
-                        <div class="flex items-center gap-2 mb-1">
-                            <h3 class="text-sm font-black text-white" x-text="benefit.name"></h3>
-                            <span class="text-[10px] font-black text-emerald-400" x-text="'$' + benefit.value"></span>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-base font-black text-white" x-text="benefit.name"></h3>
+                            <span class="text-[12px] font-black text-emerald-400" x-text="'$' + benefit.value"></span>
                         </div>
-                        <p class="text-[10px] text-slate-500 font-medium" x-text="benefit.desc"></p>
+                        <p class="text-[12px] text-slate-500 font-medium leading-relaxed" x-text="benefit.desc"></p>
                     </div>
                     <button @click="toggleBenefit(benefit.id); haptic(20)" 
                             :class="benefit.used ? 'bg-emerald-500' : 'bg-white text-black'"
-                            class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl">
-                        <svg x-show="benefit.used" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7" /></svg>
+                            class="w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl flex-shrink-0">
+                        <svg x-show="benefit.used" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7" /></svg>
                         <span x-show="!benefit.used" class="text-2xl font-light">+</span>
                     </button>
                 </div>
-                <div class="mt-4 pt-4 border-t border-white/5">
-                    <input type="text" x-model="benefit.note" @input="save()" class="w-full bg-transparent p-0 text-[10px] text-slate-400 italic" placeholder="Add tracking ID or date...">
+                <div class="mt-5 pt-5 border-t border-white/5">
+                    <input type="text" x-model="benefit.note" @input="save()" class="w-full bg-transparent p-0 text-[12px] text-slate-400 italic" placeholder="Add tracking ID or date...">
                 </div>
             </div>
         </template>
